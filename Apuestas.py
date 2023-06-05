@@ -2,6 +2,9 @@ import requests
 import json
 import csv
 from passlib.hash import pbkdf2_sha256 as plib
+import os
+import colored
+from colored import stylize
 
 def respuesta_api(url , header, endpoint, *nombre) -> dict:
     respuesta = requests.request("GET",url = (url + endpoint), headers = header)
@@ -79,6 +82,69 @@ def verificar_contraseña(contraseña, hash) -> bool:
     else:
         return False
 
+def imprimir_menu():
+    os.system("cls")
+    print(f"Bienvenido a {stylize('Jugársela', (colored.fg('green') + colored.attr('underlined')))}!\n")
+    print("a. Mostrar plantel de un equipo")
+    print("b. Mostrar tabla de posiciones")
+    print("c. Mostrar informacion del escudo y estadio de un equipo")
+    print("d. Mostrar gráfico de goles por minuto de un equipo")
+    print("e. Cargar dinero")
+    print("f. Mostrar usuario que más dinero ganó")
+    print("g. Mostrar usuario que más veces ganó")
+    print("h. Apostar\n")
+    return
+
+def preguntar(liga):
+    opciones = ['a','b','c','d','f','g','h']
+    imprimir_menu()
+    seleccionar_opcion = input("Seleccionar una opcion: ")
+    while (seleccionar_opcion not in opciones):
+        seleccionar_opcion = input("Seleccionar una opcion: ")
+    if(seleccionar_opcion == 'a'):
+        mostrar_plantel()
+    if(seleccionar_opcion == 'b'):
+        mostrar_tabla_posiciones(liga)
+    if(seleccionar_opcion == 'c'):
+        mostar_info_equipo()
+    if(seleccionar_opcion == 'd'):
+        mostrar_grafico()
+    if(seleccionar_opcion == 'e'):
+        ingresar_dinero()
+    if(seleccionar_opcion == 'f'):
+        mostrar_usuario_mas_dinero_gano()
+    if(seleccionar_opcion == 'g'):
+        mostar_usuario_mas_veces_gano()
+    if(seleccionar_opcion == 'h'):
+        apostar()
+    return
+
+def mostrar_plantel():
+    return
+
+def mostrar_tabla_posiciones(liga):
+    for i in range(len(liga)):
+        print(f"{i+1}. {liga[i]['team']['name']}")
+    print("")
+    return
+
+def mostar_info_equipo():
+    return
+
+def mostrar_grafico():
+    return
+
+def ingresar_dinero():
+    return
+
+def mostrar_usuario_mas_dinero_gano():
+    return
+
+def mostar_usuario_mas_veces_gano():
+    return
+
+def apostar():
+    return
 
 def main():
 
@@ -92,12 +158,8 @@ def main():
     liga = respuesta['response'][0]['league']['standings'][1] #lista, cada indice es un equipo
 
     usuario = pedir_usuario()
-
-
     
-    
-
-                
-
+    preguntar(liga)
+             
 main()
 
