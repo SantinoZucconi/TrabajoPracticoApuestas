@@ -26,21 +26,6 @@ def leer_archivo_respuesta_api(archivo_respuesta) -> dict:
     datos = json.loads(datos)
     return datos
 
-def pedir_usuario() -> dict:
-    mail = input("Ingrese su mail: ")
-
-    if (validar_mail(mail) == False):
-        print("Mail invalido")
-        pedir_usuario()
-        return 
-     
-    nombre     = input("Ingrese su nombre de usuario: ")
-    contraseña = input("Ingrese su contraseña: ")
-
-    usuario = ingreso_de_usuario(mail,nombre,contraseña, archivo_usuarios = "usuarios.csv")
-
-    return usuario
-
 def validar_mail(mail) -> bool:
     mail = mail.split("@")
     if (len(mail) == 2 and mail[1] != ""):
@@ -65,9 +50,15 @@ def actualizar_tabla_usuarios(datos_actualizados):
         for dato in datos_actualizados:
             writer.writerow((dato['id'],dato['nombre'],dato['contraseña'],dato['cantidad apostada'],dato['fecha ultima apuesta'],dato['dinero disponible']))
 
-def ingreso_de_usuario(mail, nombre_de_usuario, contraseña, archivo_usuarios) -> dict:
-
-    usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
+def ingreso_de_usuario() -> dict:
+    mail = input("Ingrese su mail: ")
+    if (validar_mail(mail) == False):
+        print("Mail invalido")
+        ingreso_de_usuario()
+        return  
+    nombre_de_usuario   = input("Ingrese su nombre de usuario: ")
+    contraseña          = input("Ingrese su contraseña: ")
+    usuarios            = leer_usuarios(archivo_usuarios = "usuarios.csv")
     usuario_coincidente = "no encontrado"
     
     for i in range(len(usuarios)):
@@ -77,12 +68,12 @@ def ingreso_de_usuario(mail, nombre_de_usuario, contraseña, archivo_usuarios) -
                 return usuario_coincidente
             else:
                 print("El usuario o la contraseña es incorrecta")
-                pedir_usuario()
+                ingreso_de_usuario()
                 return
                            
     if (usuario_coincidente == "no encontrado"):
         contraseña = plib.hash(contraseña)
-        with open(archivo_usuarios, "a", newline = "", encoding = "utf-8-sig") as archivo:
+        with open("usuarios.csv", "a", newline = "", encoding = "utf-8-sig") as archivo:
             writer = csv.writer(archivo, delimiter=",", quotechar = '"', quoting = csv.QUOTE_NONNUMERIC)
             writer.writerow((mail,nombre_de_usuario,contraseña,0,"",0))  
         usuario_coincidente = {"id": mail, "nombre": nombre_de_usuario, "contraseña": contraseña, "cantidad apostada": 0, "fecha ultima apuesta": "", "dinero disponible": 0}
@@ -108,31 +99,19 @@ def imprimir_menu():
     print("h. Apostar\n")
     return
 
-def preguntar(liga,usuario):
+def verificar_opciones(input):
     opciones = ['a','b','c','d','e','f','g','h']
-    imprimir_menu()
-    seleccionar_opcion = input("Seleccionar una opcion: ")
-    while (seleccionar_opcion not in opciones):
-        seleccionar_opcion = input("Seleccionar una opcion: ")
-    if(seleccionar_opcion == 'a'):
-        mostrar_plantel()
-    if(seleccionar_opcion == 'b'):
-        mostrar_tabla_posiciones()
-    if(seleccionar_opcion == 'c'):
-        mostar_info_equipo()
-    if(seleccionar_opcion == 'd'):
-        mostrar_grafico()
-    if(seleccionar_opcion == 'e'):
-        ingresar_dinero(usuario)
-    if(seleccionar_opcion == 'f'):
-        mostrar_usuario_mas_dinero_gano()
-    if(seleccionar_opcion == 'g'):
-        mostar_usuario_mas_veces_gano()
-    if(seleccionar_opcion == 'h'):
-        apostar()
-    return
+    if input not in opciones:
+        return False
+    else:
+        return True
 
 def mostrar_plantel():
+    api = respuesta_api("standings?league=128&season=2023","liga_argentina_2023")
+    liga = api['response'][0]['league']['standings'][1]
+    equipos_id = []
+    for i in range(len(liga)):
+        equipos_id.append(api['response'][0]['league']['standings'][1][i]['team']['id'])
     return
 
 def mostrar_tabla_posiciones():
@@ -174,19 +153,29 @@ def apostar():
     return
 
 def main():
+    usuario = ingreso_de_usuario()
+    
+    imprimir_menu()
 
-    url = "https://v3.football.api-sports.io/"
-    header = {"x-rapidapi-host": "v3.football.api-sports.io",
-              "x-rapidapi-key": "f0c007a556a4cabc316ce1a8afa0d95a"}
-    endpoint = "standings?league=128&season=2023"
-    
-    respuesta = leer_archivo_respuesta_api(archivo_respuesta = "respuesta_liga_argentina.txt") #esta funcion se usa una vez hecho la request a la api, asi evitamos gastar los usos que nos da la pagina
-    
-    liga = respuesta['response'][0]['league']['standings'][1] #lista, cada indice es un equipo
-
-    usuario = pedir_usuario()
-    
-    preguntar(liga,usuario)
+    seleccionar_opcion = input("Seleccionar una opcion: ")
+    while (verificar_opciones(seleccionar_opcion) == False):
+        seleccionar_opcion = input("Seleccionar una opcion: ")
+    if(seleccionar_opcion == 'a'):
+        mostrar_plantel()
+    if(seleccionar_opcion == 'b'):
+        mostrar_tabla_posiciones()
+    if(seleccionar_opcion == 'c'):
+        mostar_info_equipo()
+    if(seleccionar_opcion == 'd'):
+        mostrar_grafico()
+    if(seleccionar_opcion == 'e'):
+        ingresar_dinero(usuario)
+    if(seleccionar_opcion == 'f'):
+        mostrar_usuario_mas_dinero_gano()
+    if(seleccionar_opcion == 'g'):
+        mostar_usuario_mas_veces_gano()
+    if(seleccionar_opcion == 'h'):
+        apostar()
              
 main()
 
