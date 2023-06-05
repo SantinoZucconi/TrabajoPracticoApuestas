@@ -22,12 +22,25 @@ def leer_archivo_respuesta_api(archivo_respuesta) -> dict:
 
 def pedir_usuario() -> dict:
     mail = input("Ingrese su mail: ")
-    nombre = input("Ingrese su nombre de usuario: ")
+
+    if (validar_mail(mail) == False):
+        print("Mail invalido")
+        pedir_usuario()
+        return 
+     
+    nombre     = input("Ingrese su nombre de usuario: ")
     contraseña = input("Ingrese su contraseña: ")
 
     usuario = ingreso_de_usuario(mail,nombre,contraseña, archivo_usuarios = "usuarios.csv")
 
     return usuario
+
+def validar_mail(mail) -> bool:
+    mail = mail.split("@")
+    if (len(mail) == 2 and mail[1] != ""):
+        return True
+    else:
+        return False
 
 def ingreso_de_usuario(mail, nombre_de_usuario, contraseña, archivo_usuarios) -> dict:
 
@@ -45,13 +58,11 @@ def ingreso_de_usuario(mail, nombre_de_usuario, contraseña, archivo_usuarios) -
         if (usuarios[i]['id'] == mail):
             if(verificar_contraseña(contraseña, usuarios[i]['contraseña']) == True and usuarios[i]['nombre'] == nombre_de_usuario):
                 usuario_coincidente = usuarios[i]
-                break
+                return usuario_coincidente
             else:
                 print("El usuario o la contraseña es incorrecta")
-                usuario_coincidente = "usuario o contraseña incorrecta"
-
-    if (usuario_coincidente == "usuario o contraseña incorrecta"):
-        pedir_usuario()
+                pedir_usuario()
+                return
                            
     if (usuario_coincidente == "no encontrado"):
         contraseña = plib.hash(contraseña)
@@ -78,11 +89,13 @@ def main():
     
     respuesta = leer_archivo_respuesta_api(archivo_respuesta = "respuesta_liga_argentina.txt") #esta funcion se usa una vez hecho la request a la api, asi evitamos gastar los usos que nos da la pagina
     
-    liga = respuesta["response"][0]['league']['standings'][1] #lista, cada indice es un equipo
+    liga = respuesta['response'][0]['league']['standings'][1] #lista, cada indice es un equipo
 
     usuario = pedir_usuario()
+
+
     
-    #print(liga[0])
+    
 
                 
 
