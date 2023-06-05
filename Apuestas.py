@@ -6,7 +6,10 @@ import os
 import colored
 from colored import stylize
 
-def respuesta_api(url , header, endpoint, *nombre) -> dict:
+def respuesta_api(endpoint, *nombre) -> dict:
+    url = "https://v3.football.api-sports.io/"
+    header = {"x-rapidapi-host": "v3.football.api-sports.io",
+              "x-rapidapi-key": "f0c007a556a4cabc316ce1a8afa0d95a"}
     respuesta = requests.request("GET",url = (url + endpoint), headers = header)
     respuesta = respuesta.text
     with open(f"respuesta_{nombre[0]}.txt", "w") as archivo:
@@ -45,17 +48,27 @@ def validar_mail(mail) -> bool:
     else:
         return False
 
-def ingreso_de_usuario(mail, nombre_de_usuario, contraseña, archivo_usuarios) -> dict:
-
+def leer_usuarios(archivo_usuarios):
     usuarios = []
-    usuario_coincidente = "no encontrado"
-
     with open(archivo_usuarios, "r", newline = "", encoding = "utf-8-sig") as archivo:
         reader = csv.reader(archivo, delimiter = ",")
         next(reader)
         for row in reader:
             if row != []:
-                usuarios.append({"id": row[0], "nombre": row[1], "contraseña": row[2], "cantidad apostada": row[3], "fecha ultima apuesta": row[4], "dinero disponible": row[5]})
+                usuarios.append({"id": row[0], "nombre": row[1], "contraseña": row[2], "cantidad apostada": float(row[3]), "fecha ultima apuesta": row[4], "dinero disponible": float(row[5])})
+    return usuarios
+
+def actualizar_tabla_usuarios(datos_actualizados):
+    with open("usuarios.csv","w", newline="",encoding="utf-8-sig") as archivo:
+        writer = csv.writer(archivo, delimiter=",", quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+        writer.writerow(("ID","Nombre de usuario","Contraseña","Cantidad apostada","Fecha de la ultima apuesta","Cantidad de dinero disponible"))
+        for dato in datos_actualizados:
+            writer.writerow((dato['id'],dato['nombre'],dato['contraseña'],dato['cantidad apostada'],dato['fecha ultima apuesta'],dato['dinero disponible']))
+
+def ingreso_de_usuario(mail, nombre_de_usuario, contraseña, archivo_usuarios) -> dict:
+
+    usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
+    usuario_coincidente = "no encontrado"
     
     for i in range(len(usuarios)):
         if (usuarios[i]['id'] == mail):
@@ -95,8 +108,8 @@ def imprimir_menu():
     print("h. Apostar\n")
     return
 
-def preguntar(liga):
-    opciones = ['a','b','c','d','f','g','h']
+def preguntar(liga,usuario):
+    opciones = ['a','b','c','d','e','f','g','h']
     imprimir_menu()
     seleccionar_opcion = input("Seleccionar una opcion: ")
     while (seleccionar_opcion not in opciones):
@@ -104,13 +117,13 @@ def preguntar(liga):
     if(seleccionar_opcion == 'a'):
         mostrar_plantel()
     if(seleccionar_opcion == 'b'):
-        mostrar_tabla_posiciones(liga)
+        mostrar_tabla_posiciones()
     if(seleccionar_opcion == 'c'):
         mostar_info_equipo()
     if(seleccionar_opcion == 'd'):
         mostrar_grafico()
     if(seleccionar_opcion == 'e'):
-        ingresar_dinero()
+        ingresar_dinero(usuario)
     if(seleccionar_opcion == 'f'):
         mostrar_usuario_mas_dinero_gano()
     if(seleccionar_opcion == 'g'):
@@ -122,9 +135,15 @@ def preguntar(liga):
 def mostrar_plantel():
     return
 
-def mostrar_tabla_posiciones(liga):
-    for i in range(len(liga)):
-        print(f"{i+1}. {liga[i]['team']['name']}")
+def mostrar_tabla_posiciones():
+    temporadas = [2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025]
+    preguntar = int(input("Ingrese la temporada: "))
+    while (preguntar not in temporadas):
+        preguntar = int(input(f"Ingrese la temporada: \n"))
+    respuesta = respuesta_api(f"standings?league=128&season={preguntar}",f"temporada_{preguntar}")
+    temporada = respuesta['response'][0]['league']['standings'][1]
+    for i in range(len(temporada)):
+        print(f"{i+1}. {temporada[i]['team']['name']}")
     print("")
     return
 
@@ -134,7 +153,15 @@ def mostar_info_equipo():
 def mostrar_grafico():
     return
 
-def ingresar_dinero():
+def ingresar_dinero(usuario):
+    bd_usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
+    monto       = float(input("Ingrese el monto a depositar: "))   
+
+    bd_usuarios.remove(usuario)
+    usuario['dinero disponible'] += monto
+    bd_usuarios.append(usuario)
+
+    actualizar_tabla_usuarios(bd_usuarios)
     return
 
 def mostrar_usuario_mas_dinero_gano():
@@ -159,7 +186,7 @@ def main():
 
     usuario = pedir_usuario()
     
-    preguntar(liga)
+    preguntar(liga,usuario)
              
 main()
 
