@@ -12,8 +12,6 @@ def respuesta_api(endpoint, *nombre) -> dict:
               "x-rapidapi-key": "f0c007a556a4cabc316ce1a8afa0d95a"}
     respuesta = requests.request("GET",url = (url + endpoint), headers = header)
     respuesta = respuesta.text
-    with open(f"respuesta_{nombre[0]}.txt", "w") as archivo:
-        archivo.write(respuesta)
     respuesta = json.loads(respuesta)
     return respuesta
 
@@ -51,6 +49,7 @@ def actualizar_tabla_usuarios(datos_actualizados):
             writer.writerow((dato['id'],dato['nombre'],dato['contraseña'],dato['cantidad apostada'],dato['fecha ultima apuesta'],dato['dinero disponible']))
 
 def ingreso_de_usuario() -> dict:
+
     mail = input("Ingrese su mail: ")
     if (validar_mail(mail) == False):
         print("Mail invalido")
@@ -59,17 +58,15 @@ def ingreso_de_usuario() -> dict:
     nombre_de_usuario   = input("Ingrese su nombre de usuario: ")
     contraseña          = input("Ingrese su contraseña: ")
     usuarios            = leer_usuarios(archivo_usuarios = "usuarios.csv")
-    usuario_coincidente = "no encontrado"
     
     for i in range(len(usuarios)):
         if (usuarios[i]['id'] == mail):
             if(verificar_contraseña(contraseña, usuarios[i]['contraseña']) == True and usuarios[i]['nombre'] == nombre_de_usuario):
                 usuario_coincidente = usuarios[i]
                 return usuario_coincidente
-            else:
+            elif (verificar_contraseña(contraseña, usuarios[i]['contraseña']) != True or usuarios[i]['nombre'] != nombre_de_usuario):
                 print("El usuario o la contraseña es incorrecta")
-                ingreso_de_usuario()
-                return
+                return 
                            
     if (usuario_coincidente == "no encontrado"):
         contraseña = plib.hash(contraseña)
@@ -107,11 +104,25 @@ def verificar_opciones(input):
         return True
 
 def mostrar_plantel():
+    preguntar = input("Ingrese el nombre del equipo: ").lower()
     api = respuesta_api("standings?league=128&season=2023","liga_argentina_2023")
     liga = api['response'][0]['league']['standings'][1]
-    equipos_id = []
+    equipo_mas_id = []
+    jugadores = []
     for i in range(len(liga)):
-        equipos_id.append(api['response'][0]['league']['standings'][1][i]['team']['id'])
+        equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
+    
+    for i in range(len(equipo_mas_id)):
+        if (preguntar in equipo_mas_id[i]["nombre"]):
+            api_equipo = respuesta_api(f"/players/squads?team={equipo_mas_id[i]['id']}")
+            jugadores = api_equipo['response'][0]['players']
+    
+    if(jugadores != []):
+        for i in range(len(jugadores)):
+            print(f"{i+1}. {jugadores[i]['name']}")
+    else:
+        print("Nombre de equipo inválido")
+        mostrar_plantel()
     return
 
 def mostrar_tabla_posiciones():
@@ -154,6 +165,8 @@ def apostar():
 
 def main():
     usuario = ingreso_de_usuario()
+    while (usuario == None):
+        usuario = ingreso_de_usuario()
     
     imprimir_menu()
 
