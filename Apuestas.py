@@ -6,7 +6,7 @@ import os
 import colored
 from colored import stylize
 
-def respuesta_api(endpoint, *nombre) -> dict:
+def respuesta_api(endpoint) -> dict:
     url = "https://v3.football.api-sports.io/"
     header = {"x-rapidapi-host": "v3.football.api-sports.io",
               "x-rapidapi-key": "f0c007a556a4cabc316ce1a8afa0d95a"}
@@ -104,7 +104,7 @@ def verificar_opciones(input) -> bool:
 
 def mostrar_plantel():
     preguntar = input("Ingrese el nombre del equipo: ").lower()
-    api = respuesta_api("standings?league=128&season=2023","liga_argentina_2023")
+    api = respuesta_api("standings?league=128&season=2023")
     liga = api['response'][0]['league']['standings'][1]
     equipo_mas_id = []
     jugadores = []
@@ -125,7 +125,7 @@ def mostrar_plantel():
     return
 
 def mostrar_tabla_posiciones():
-    temporadas = [2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025]
+    temporadas = [2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025]
     preguntar = int(input("Ingrese la temporada: "))
     while (preguntar not in temporadas):
         preguntar = int(input(f"Ingrese la temporada: \n"))
@@ -137,6 +137,27 @@ def mostrar_tabla_posiciones():
     return
 
 def mostar_info_equipo():
+    preguntar = input("Ingrese el nombre del equipo: ").lower()
+    api = respuesta_api("standings?league=128&season=2023")
+    liga = api['response'][0]['league']['standings'][1]
+    equipo_mas_id = []
+    jugadores = []
+    for i in range(len(liga)):
+        equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
+    
+    for i in range(len(equipo_mas_id)):
+        if (preguntar in equipo_mas_id[i]["nombre"]):
+            api_equipo = respuesta_api(f"/teams?id={equipo_mas_id[i]['id']}")
+            equipo = api_equipo['response'][0]['team']
+            estadio = api_equipo['response'][0]['venue']
+   
+    print("Equipo: ")
+    for i in equipo.items():
+        print(i)
+    print("")
+    print("Estadio: ")
+    for i in estadio.items():
+        print(i)    
     return
 
 def mostrar_grafico():
