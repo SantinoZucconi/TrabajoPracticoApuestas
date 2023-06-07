@@ -68,12 +68,11 @@ def ingreso_de_usuario() -> dict:
                 print("El usuario o la contraseña es incorrecta")
                 return 
                            
-    if (usuario_coincidente == "no encontrado"):
-        contraseña = plib.hash(contraseña)
-        with open("usuarios.csv", "a", newline = "", encoding = "utf-8-sig") as archivo:
-            writer = csv.writer(archivo, delimiter=",", quotechar = '"', quoting = csv.QUOTE_NONNUMERIC)
-            writer.writerow((mail,nombre_de_usuario,contraseña,0,"",0))  
-        usuario_coincidente = {"id": mail, "nombre": nombre_de_usuario, "contraseña": contraseña, "cantidad apostada": 0, "fecha ultima apuesta": "", "dinero disponible": 0}
+    contraseña = plib.hash(contraseña)
+    with open("usuarios.csv", "a", newline = "", encoding = "utf-8-sig") as archivo:
+        writer = csv.writer(archivo, delimiter=",", quotechar = '"', quoting = csv.QUOTE_NONNUMERIC)
+        writer.writerow((mail,nombre_de_usuario,contraseña,0,"",0))  
+    usuario_coincidente = {"id": mail, "nombre": nombre_de_usuario, "contraseña": contraseña, "cantidad apostada": 0, "fecha ultima apuesta": "", "dinero disponible": 0}
 
     return usuario_coincidente
 
@@ -91,12 +90,12 @@ def imprimir_menu():
     print("c. Mostrar informacion del escudo y estadio de un equipo")
     print("d. Mostrar gráfico de goles por minuto de un equipo")
     print("e. Cargar dinero")
-    print("f. Mostrar usuario que más dinero ganó")
+    print("f. Mostrar usuario que más dinero apostó")
     print("g. Mostrar usuario que más veces ganó")
     print("h. Apostar\n")
     return
 
-def verificar_opciones(input):
+def verificar_opciones(input) -> bool:
     opciones = ['a','b','c','d','e','f','g','h']
     if input not in opciones:
         return False
@@ -154,7 +153,22 @@ def ingresar_dinero(usuario):
     actualizar_tabla_usuarios(bd_usuarios)
     return
 
-def mostrar_usuario_mas_dinero_gano():
+def mostrar_usuario_mas_dinero_aposto():
+    usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
+    max_apostador = [usuarios[0]]
+    for i in range(len(usuarios)):
+        if usuarios[i]['cantidad apostada'] > max_apostador[0]['cantidad apostada']:
+            max_apostador = [usuarios[i]]
+        elif usuarios[i]['cantidad apostada'] == max_apostador[0]['cantidad apostada']:
+            max_apostador.append(usuarios[i])
+    
+    if (len(max_apostador) == 1):
+        print(f"El usuario que más dinero apostó fue {max_apostador[0]['nombre']}")
+    else:
+        print(f"Los usuarios que más dinero apostaron fueron:")
+        for i in range(len(max_apostador)):
+            print(max_apostador[i]['nombre'])
+
     return
 
 def mostar_usuario_mas_veces_gano():
@@ -184,7 +198,7 @@ def main():
     if(seleccionar_opcion == 'e'):
         ingresar_dinero(usuario)
     if(seleccionar_opcion == 'f'):
-        mostrar_usuario_mas_dinero_gano()
+        mostrar_usuario_mas_dinero_aposto()
     if(seleccionar_opcion == 'g'):
         mostar_usuario_mas_veces_gano()
     if(seleccionar_opcion == 'h'):
