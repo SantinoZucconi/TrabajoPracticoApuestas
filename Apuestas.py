@@ -3,11 +3,12 @@ import json
 import csv
 from passlib.hash import pbkdf2_sha256 as plib
 import os
+import random
 import colored
 from colored import stylize
 
 def respuesta_api(endpoint) -> dict:
-    url = "https://v3.football.api-sports.io/"
+    url    = "https://v3.football.api-sports.io/"
     header = {"x-rapidapi-host": "v3.football.api-sports.io",
               "x-rapidapi-key": "f0c007a556a4cabc316ce1a8afa0d95a"}
     respuesta = requests.request("GET",url = (url + endpoint), headers = header)
@@ -103,11 +104,11 @@ def verificar_opciones(input) -> bool:
         return True
 
 def mostrar_plantel():
-    preguntar = input("Ingrese el nombre del equipo: ").lower()
-    api = respuesta_api("standings?league=128&season=2023")
-    liga = api['response'][0]['league']['standings'][1]
+    preguntar     = input("Ingrese el nombre del equipo: ").lower()
+    api           = respuesta_api("standings?league=128&season=2023")
+    liga          = api['response'][0]['league']['standings'][1]
     equipo_mas_id = []
-    jugadores = []
+    jugadores     = []
     for i in range(len(liga)):
         equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
     
@@ -126,8 +127,9 @@ def mostrar_plantel():
 
 def mostrar_tabla_posiciones():
     temporadas = [2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025]
-    preguntar = int(input("Ingrese la temporada: "))
+    preguntar  = int(input("Ingrese la temporada: "))
     while (preguntar not in temporadas):
+        print("Temporada no disponible")
         preguntar = int(input(f"Ingrese la temporada: \n"))
     respuesta = respuesta_api(f"standings?league=128&season={preguntar}",f"temporada_{preguntar}")
     temporada = respuesta['response'][0]['league']['standings'][1]
@@ -137,11 +139,11 @@ def mostrar_tabla_posiciones():
     return
 
 def mostar_info_equipo():
-    preguntar = input("Ingrese el nombre del equipo: ").lower()
-    api = respuesta_api("standings?league=128&season=2023")
-    liga = api['response'][0]['league']['standings'][1]
+    preguntar     = input("Ingrese el nombre del equipo: ").lower()
+    api           = respuesta_api("standings?league=128&season=2023")
+    liga          = api['response'][0]['league']['standings'][1]
     equipo_mas_id = []
-    jugadores = []
+    jugadores     = []
     for i in range(len(liga)):
         equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
     
@@ -178,9 +180,9 @@ def mostrar_usuario_mas_dinero_aposto():
     usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
     max_apostador = [usuarios[0]]
     for i in range(len(usuarios)):
-        if usuarios[i]['cantidad apostada'] > max_apostador[0]['cantidad apostada']:
+        if (usuarios[i]['cantidad apostada'] > max_apostador[0]['cantidad apostada']):
             max_apostador = [usuarios[i]]
-        elif usuarios[i]['cantidad apostada'] == max_apostador[0]['cantidad apostada']:
+        elif (usuarios[i]['cantidad apostada'] == max_apostador[0]['cantidad apostada']):
             max_apostador.append(usuarios[i])
     
     if (len(max_apostador) == 1):
@@ -195,7 +197,44 @@ def mostrar_usuario_mas_dinero_aposto():
 def mostar_usuario_mas_veces_gano():
     return
 
-def apostar():
+def apostar(usuario):
+    fixtures = respuesta_api("/fixtures?league=128&season=2023")['response']
+    fixtures_equipo = []
+    pregunta = input("Ingrese un equipo: ").capitalize()
+    
+    for i in range(len(fixtures)):
+        local = fixtures[i]['teams']['home']['name']
+        visitante = fixtures[i]['teams']['away']['name']
+        fecha = fixtures[i]['fixture']['date'].split("T")[0].replace("-","/")
+        if(pregunta in local or pregunta in visitante):
+            print(f"{local}(L) vs. {visitante}(V) - fecha: {fecha}")
+            fixtures_equipo.append({"local": local,"visitante": visitante,"fecha": fecha})
+    pregunta_fecha = input("Ingrese la fecha deseada (YYYY/MM/DD): ")
+
+    for i in range(len(fixtures_equipo)):
+        if(pregunta_fecha == fixtures_equipo[i]['fecha']):
+            print(fixtures_equipo[i])
+            apuesta = input("Ingrese su apuesta (L/E/V): ").upper()
+            while apuesta not in ["L","E","V"]:
+                apuesta = input("Ingrese su apuesta (L/E/V): ").upper()
+            monto = float(input("Ingrese su monto: "))
+            while (monto > usuario['dinero disponible']):
+                print(f"Saldo insuficiente.(Saldo: {usuario['dinero disponible']}$)")
+                monto = float(input("Ingrese su monto: "))
+            resultado = random.randrange(1,4)
+            if resultado == 1:
+                resultado = "L"
+            if resultado == 2:
+                resultado = "E"
+            if resultado == 3:
+                resultado = "V"
+            if (resultado == apuesta):
+                multiplicador = random.randrange(2,5)
+                monto = monto*multiplicador
+            else:
+                multiplicador = random.randrange(2,5)/10
+                monto = monto*multiplicador
+ 
     return
 
 def main():
@@ -223,7 +262,7 @@ def main():
     if(seleccionar_opcion == 'g'):
         mostar_usuario_mas_veces_gano()
     if(seleccionar_opcion == 'h'):
-        apostar()
+        apostar(usuario)
              
 main()
 
