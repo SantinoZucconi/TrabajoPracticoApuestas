@@ -6,6 +6,7 @@ import os
 import random
 import colored
 from colored import stylize
+import datetime
 
 def respuesta_api(endpoint) -> dict:
     url    = "https://v3.football.api-sports.io/"
@@ -198,6 +199,7 @@ def mostar_usuario_mas_veces_gano():
     return
 
 def apostar(usuario):
+    bd_usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
     fixtures = respuesta_api("/fixtures?league=128&season=2023")['response']
     fixtures_equipo = []
     pregunta = input("Ingrese un equipo: ").capitalize()
@@ -234,7 +236,19 @@ def apostar(usuario):
             else:
                 multiplicador = random.randrange(2,5)/10
                 monto = monto*multiplicador
- 
+    print(f"Resultado: {resultado}, Monto actual: {monto}, Monto anterior: {monto/multiplicador}")
+    print(f"Ganancia: {monto - (monto/multiplicador)}")
+    ganancia = float(monto - (monto/multiplicador))
+    bd_usuarios.remove(usuario)
+    usuario['dinero disponible'] = usuario['dinero disponible'] + ganancia
+    bd_usuarios.append(usuario)
+    actualizar_tabla_usuarios(bd_usuarios)
+    fecha_transaccion = datetime.datetime.today()
+    transaccion = {"resultado": resultado, "importe": ganancia, "id": usuario['id'], "fecha": fecha_transaccion}
+
+    with open("transacciones.csv","a", newline = "", encoding = "utf-8") as archivo:
+        writer = csv.writer(archivo, delimiter=",", quotechar='"', quoting = csv.QUOTE_NONNUMERIC)
+        writer.writerow((transaccion["id"],transaccion["fecha"],transaccion["resultado"],transaccion["importe"]))
     return
 
 def main():
