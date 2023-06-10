@@ -196,6 +196,26 @@ def mostrar_usuario_mas_dinero_aposto():
     return
 
 def mostar_usuario_mas_veces_gano():
+    transaccion = []
+    cantidad_ganadas = {}
+    with open("transacciones.csv", "r", newline="", encoding="utf-8-sig") as archivo:
+        reader = csv.reader(archivo , delimiter=",", quotechar='"', quoting = csv.QUOTE_NONNUMERIC)
+        next(reader)
+        for row in reader:
+            transaccion.append({"id": row[0],"fecha": row[1],"resultado": row[2],"importe": row[3]})
+    for i in range(len(transaccion)):
+        if(transaccion[i]['id'] not in cantidad_ganadas):
+            cantidad_ganadas[transaccion[i]['id']] = 0
+        if(transaccion[i]['importe'] > 0):
+            cantidad_ganadas[transaccion[i]['id']] += 1
+    max_ganancia = 0
+    max_ganador = ""
+    for apostador in cantidad_ganadas.items():
+        if(apostador[1] > max_ganancia):
+            max_ganancia = apostador[1]
+            max_ganador = apostador[0]
+    print(f"El usuario que mas veces gano fue: {max_ganador} con un total de {max_ganancia} veces ganadas.")
+        
     return
 
 def apostar(usuario):
