@@ -255,8 +255,11 @@ def apostar(usuario):
                 resultado = "E"
             if resultado == 3:
                 resultado = "V"
-            if (resultado == apuesta):
+            if(resultado == apuesta):
                 multiplicador = random.randrange(2,5)
+                monto = monto*multiplicador
+            elif(resultado != apuesta and resultado == 'E'):
+                multiplicador = 0.5
                 monto = monto*multiplicador
             else:
                 multiplicador = random.randrange(2,5)/10
@@ -264,11 +267,13 @@ def apostar(usuario):
     print(f"Resultado: {resultado}, Monto actual: {monto}, Monto anterior: {monto/multiplicador}")
     print(f"Ganancia: {monto - (monto/multiplicador)}")
     ganancia = float(monto - (monto/multiplicador))
+    fecha_transaccion = datetime.datetime.today()
     bd_usuarios.remove(usuario)
     usuario['dinero disponible'] = usuario['dinero disponible'] + ganancia
+    usuario['cantidad apostada'] = usuario['cantidad apostada'] + (monto/multiplicador)
+    usuario['fecha ultima apuesta'] = fecha_transaccion
     bd_usuarios.append(usuario)
     actualizar_tabla_usuarios(bd_usuarios)
-    fecha_transaccion = datetime.datetime.today()
     transaccion = {"resultado": resultado, "importe": ganancia, "id": usuario['id'], "fecha": fecha_transaccion}
 
     with open("transacciones.csv","a", newline = "", encoding = "utf-8") as archivo:
