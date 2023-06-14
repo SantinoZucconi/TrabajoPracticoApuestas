@@ -7,6 +7,7 @@ import random
 import colored
 from colored import stylize
 import datetime
+from PIL import Image
 
 def respuesta_api(endpoint) -> dict:
     url    = "https://v3.football.api-sports.io/"
@@ -160,7 +161,11 @@ def mostar_info_equipo():
     print("")
     print("Estadio: ")
     for i in estadio.items():
-        print(i)    
+        print(i)
+    escudo = Image.open(requests.get(equipo['logo'], stream=True).raw) 
+    imagen_estadio = Image.open(requests.get(estadio['image'], stream=True).raw)
+    escudo.show()
+    imagen_estadio.show()
     return
 
 def mostrar_grafico():
