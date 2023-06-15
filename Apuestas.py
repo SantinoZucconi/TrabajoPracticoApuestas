@@ -8,6 +8,8 @@ import colored
 from colored import stylize
 import datetime
 from PIL import Image
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 def respuesta_api(endpoint) -> dict:
     url    = "https://v3.football.api-sports.io/"
@@ -169,6 +171,30 @@ def mostar_info_equipo():
     return
 
 def mostrar_grafico():
+    preguntar     = input("Ingrese el nombre del equipo: ").lower()
+    api           = respuesta_api("standings?league=128&season=2023")
+    liga          = api['response'][0]['league']['standings'][1]
+    equipo_mas_id = []
+    x = []
+    y = []
+    
+    for i in range(len(liga)):
+        equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
+    
+    for i in range(len(equipo_mas_id)):
+        if (preguntar in equipo_mas_id[i]["nombre"]):
+            print(equipo_mas_id[i])
+            api_estadisticas = respuesta_api(f"/teams/statistics?season=2023&team={equipo_mas_id[i]['id']}&league=128")
+            estadisticas = api_estadisticas['response']['goals']['for']['minute']
+    
+    for minutos, goles in estadisticas.items():
+        x.append(minutos)
+        y.append(goles['total'])
+    
+    graf, xy = plt.subplots()
+    xy.plot(x,y)
+    plt.show()
+
     return
 
 def ingresar_dinero(usuario):
@@ -240,20 +266,20 @@ def apostar(usuario):
 
     for i in range(len(fixtures_equipo)):
         if(pregunta_fecha == fixtures_equipo[i]['fecha']):
-            print(fixtures_equipo[i])
+            print(fixtures_equipo[i])   #############################################
             apuesta = input("Ingrese su apuesta (L/E/V): ").upper()
-            while apuesta not in ["L","E","V"]:
-                apuesta = input("Ingrese su apuesta (L/E/V): ").upper()
+            while (apuesta not in ["L","E","V"]):
+                apuesta = input("Opción no disponible, porfavor ingrese su apuesta (L/E/V): ").upper()
             monto = float(input("Ingrese su monto: "))
             while (monto > usuario['dinero disponible']):
                 print(f"Saldo insuficiente.(Saldo: {usuario['dinero disponible']}$)")
                 monto = float(input("Ingrese su monto: "))
             resultado = random.randrange(1,4)
-            if resultado == 1:
+            if (resultado == 1):
                 resultado = "L"
-            if resultado == 2:
+            if (resultado == 2):
                 resultado = "E"
-            if resultado == 3:
+            if (resultado == 3):
                 resultado = "V"
             if(resultado == apuesta):
                 multiplicador = random.randrange(2,5)
