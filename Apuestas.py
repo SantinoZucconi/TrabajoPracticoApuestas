@@ -258,15 +258,22 @@ def apostar(usuario):
     for i in range(len(fixtures)):
         local = fixtures[i]['teams']['home']['name']
         visitante = fixtures[i]['teams']['away']['name']
+        id_fixture = fixtures[i]['fixture']['id']
         fecha = fixtures[i]['fixture']['date'].split("T")[0].replace("-","/")
         if(pregunta in local or pregunta in visitante):
             print(f"{local}(L) vs. {visitante}(V) - fecha: {fecha}")
-            fixtures_equipo.append({"local": local,"visitante": visitante,"fecha": fecha})
+            fixtures_equipo.append({"local": local,"visitante": visitante,"fecha": fecha, "id": id_fixture})
     pregunta_fecha = input("Ingrese la fecha deseada (YYYY/MM/DD): ")
 
     for i in range(len(fixtures_equipo)):
         if(pregunta_fecha == fixtures_equipo[i]['fecha']):
             print(fixtures_equipo[i])   #############################################
+            prediccion = respuesta_api(f"/predictions?fixture={fixtures_equipo[i]['id']}")
+            if(prediccion['response'][0]['teams']['home']['name'] == prediccion['response'][0]['predictions']['winner']['name']):
+                prediccion = {"equipo": prediccion['response'][0]['predictions']['winner']['name'], "win or draw": prediccion['response'][0]['predictions']['win_or_draw'],"local o visitante": "L"}
+            else:
+                prediccion = {"equipo": prediccion['response'][0]['predictions']['winner']['name'], "win or draw": prediccion['response'][0]['predictions']['win_or_draw'],"local o visitante": "V"}
+            print(prediccion)
             apuesta = input("Ingrese su apuesta (L/E/V): ").upper()
             while (apuesta not in ["L","E","V"]):
                 apuesta = input("Opción no disponible, porfavor ingrese su apuesta (L/E/V): ").upper()
@@ -281,25 +288,32 @@ def apostar(usuario):
                 resultado = "E"
             if (resultado == 3):
                 resultado = "V"
+            
             if(resultado == apuesta):
-                multiplicador = random.randrange(2,5)
-                monto = monto*multiplicador
+                if((prediccion['local o visitante'] == apuesta and prediccion['win or draw'] == True) or (prediccion['local o visitante'] != apuesta and prediccion['win or draw'] == False)):
+                    multiplicador = random.randrange(2,5)
+                    monto_final = monto * multiplicador + monto * 0.1
+                else:
+                    multiplicador = random.randrange(2,5)
+                    monto_final = monto * multiplicador
             elif(resultado != apuesta and resultado == 'E'):
                 multiplicador = 0.5
-                monto = monto*multiplicador
+                monto = monto * multiplicador
             else:
-                multiplicador = random.randrange(2,5)/10
-                monto = monto*multiplicador
-    print(f"Resultado: {resultado}, Monto actual: {monto}, Monto anterior: {monto/multiplicador}")
-    print(f"Ganancia: {monto - (monto/multiplicador)}")
-    ganancia = float(monto - (monto/multiplicador))
+                multiplicador = 0
+                monto_final = monto*multiplicador
+    
+    print(f"Resultado: {resultado}, Monto actual: {monto_final}, Monto anterior: {monto}")
+    print(f"Ganancia: {monto_final - monto}")
+    ganancia = float(monto_final - monto)
     fecha_transaccion = datetime.datetime.today()
     bd_usuarios.remove(usuario)
     usuario['dinero disponible'] = usuario['dinero disponible'] + ganancia
-    usuario['cantidad apostada'] = usuario['cantidad apostada'] + (monto/multiplicador)
+    usuario['cantidad apostada'] = usuario['cantidad apostada'] + monto
     usuario['fecha ultima apuesta'] = fecha_transaccion
     bd_usuarios.append(usuario)
     actualizar_tabla_usuarios(bd_usuarios)
+
     transaccion = {"resultado": resultado, "importe": ganancia, "id": usuario['id'], "fecha": fecha_transaccion}
 
     with open("transacciones.csv","a", newline = "", encoding = "utf-8") as archivo:
