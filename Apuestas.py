@@ -130,16 +130,43 @@ def mostrar_plantel():
     return
 
 def mostrar_tabla_posiciones():
-    temporadas = [2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025]
+    grupos     = {}
+    temporadas = [2015,2016,2017,2018,2019,2020,2021,2022,2023]
     preguntar  = int(input("Ingrese la temporada: "))
     while (preguntar not in temporadas):
         print("Temporada no disponible")
         preguntar = int(input(f"Ingrese la temporada: \n"))
-    respuesta = respuesta_api(f"standings?league=128&season={preguntar}",f"temporada_{preguntar}")
-    temporada = respuesta['response'][0]['league']['standings'][1]
-    for i in range(len(temporada)):
-        print(f"{i+1}. {temporada[i]['team']['name']}")
-    print("")
+    respuesta = respuesta_api(f"standings?league=128&season={preguntar}")
+    if(preguntar in [2015,2016,2017,2018,2019,2021,2022]):
+        temporada = respuesta['response'][0]['league']['standings'][0]
+    elif(preguntar == 2020):
+        grupos["championship a"]   = respuesta['response'][0]['league']['standings'][0]
+        grupos["championship b"]   = respuesta['response'][0]['league']['standings'][1]
+        grupos["relegation a"] = respuesta['response'][0]['league']['standings'][2]
+        grupos["relegation b"] = respuesta['response'][0]['league']['standings'][3]
+    elif(preguntar == 2023):
+        temporada = respuesta['response'][0]['league']['standings'][1]
+    try:
+        for i in range(len(temporada)):
+            print(f"{i+1}. {temporada[i]['team']['name']}")
+        print("")
+    except UnboundLocalError:
+        print("Championship group A:\n")
+        for i in range(len(grupos['championship a'])):
+            print(f"{i+1}. {grupos['championship a'][i]['team']['name']}")
+        print("")
+        print("Championship group B:\n")
+        for i in range(len(grupos['championship b'])):
+            print(f"{i+1}. {grupos['championship b'][i]['team']['name']}")
+        print("")
+        print("Relegation group A:\n")
+        for i in range(len(grupos['relegation a'])):
+            print(f"{i+1}. {grupos['relegation a'][i]['team']['name']}")
+        print("")
+        print("Relegation group B:\n")
+        for i in range(len(grupos['relegation b'])):
+            print(f"{i+1}. {grupos['relegation b'][i]['team']['name']}")
+        print("")
     return
 
 def mostar_info_equipo():
