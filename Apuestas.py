@@ -119,7 +119,7 @@ def mostrar_plantel():
     for i in range(len(equipo_mas_id)):
         if (preguntar in equipo_mas_id[i]["nombre"]):
             api_equipo = respuesta_api(f"/players/squads?team={equipo_mas_id[i]['id']}")
-            jugadores = api_equipo['response'][0]['players']
+            jugadores  = api_equipo['response'][0]['players']
     
     if(jugadores != []):
         for i in range(len(jugadores)):
@@ -154,8 +154,8 @@ def mostar_info_equipo():
     for i in range(len(equipo_mas_id)):
         if (preguntar in equipo_mas_id[i]["nombre"]):
             api_equipo = respuesta_api(f"/teams?id={equipo_mas_id[i]['id']}")
-            equipo = api_equipo['response'][0]['team']
-            estadio = api_equipo['response'][0]['venue']
+            equipo     = api_equipo['response'][0]['team']
+            estadio    = api_equipo['response'][0]['venue']
    
     print("Equipo: ")
     for i in equipo.items():
@@ -164,7 +164,8 @@ def mostar_info_equipo():
     print("Estadio: ")
     for i in estadio.items():
         print(i)
-    escudo = Image.open(requests.get(equipo['logo'], stream=True).raw) 
+
+    escudo         = Image.open(requests.get(equipo['logo'], stream=True).raw) 
     imagen_estadio = Image.open(requests.get(estadio['image'], stream=True).raw)
     escudo.show()
     imagen_estadio.show()
@@ -175,8 +176,8 @@ def mostrar_grafico():
     api           = respuesta_api("standings?league=128&season=2023")
     liga          = api['response'][0]['league']['standings'][1]
     equipo_mas_id = []
-    x = []
-    y = []
+    x             = []
+    y             = []
     
     for i in range(len(liga)):
         equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
@@ -197,10 +198,20 @@ def mostrar_grafico():
 
     return
 
+def validar_monto(monto) -> bool:
+    try:
+        monto = float(monto)
+        return True
+    except ValueError:
+        return False
+
 def ingresar_dinero(usuario):
     bd_usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
-    monto       = float(input("Ingrese el monto a depositar: "))   
-
+    monto       = input("Ingrese el monto a depositar: ") 
+    while(validar_monto(monto) == False):
+        print("Monto inválido")
+        monto = input("Ingrese el monto a depositar: ") 
+    monto = float(monto)
     bd_usuarios.remove(usuario)
     usuario['dinero disponible'] += monto
     bd_usuarios.append(usuario)
@@ -209,7 +220,7 @@ def ingresar_dinero(usuario):
     return
 
 def mostrar_usuario_mas_dinero_aposto():
-    usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
+    usuarios      = leer_usuarios(archivo_usuarios = "usuarios.csv")
     max_apostador = [usuarios[0]]
     for i in range(len(usuarios)):
         if (usuarios[i]['cantidad apostada'] > max_apostador[0]['cantidad apostada']):
@@ -227,8 +238,8 @@ def mostrar_usuario_mas_dinero_aposto():
     return
 
 def mostar_usuario_mas_veces_gano():
-    usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
-    transaccion = []
+    usuarios         = leer_usuarios(archivo_usuarios = "usuarios.csv")
+    transaccion      = []
     cantidad_ganadas = {}
     with open("transacciones.csv", "r", newline="", encoding="utf-8-sig") as archivo:
         reader = csv.reader(archivo , delimiter=",", quotechar='"', quoting = csv.QUOTE_NONNUMERIC)
@@ -254,16 +265,16 @@ def mostar_usuario_mas_veces_gano():
     return
 
 def apostar(usuario):
-    bd_usuarios = leer_usuarios(archivo_usuarios = "usuarios.csv")
-    fixtures = respuesta_api("/fixtures?league=128&season=2023")['response']
+    bd_usuarios     = leer_usuarios(archivo_usuarios = "usuarios.csv")
+    fixtures        = respuesta_api("/fixtures?league=128&season=2023")['response']
     fixtures_equipo = []
-    pregunta = input("Ingrese un equipo: ").capitalize()
+    pregunta        = input("Ingrese un equipo: ").capitalize()
     
     for i in range(len(fixtures)):
-        local = fixtures[i]['teams']['home']['name']
-        visitante = fixtures[i]['teams']['away']['name']
+        local      = fixtures[i]['teams']['home']['name']
+        visitante  = fixtures[i]['teams']['away']['name']
         id_fixture = fixtures[i]['fixture']['id']
-        fecha = fixtures[i]['fixture']['date'].split("T")[0].replace("-","/")
+        fecha      = fixtures[i]['fixture']['date'].split("T")[0].replace("-","/")
         if(pregunta in local or pregunta in visitante):
             print(f"{local}(L) vs. {visitante}(V) - fecha: {fecha}")
             fixtures_equipo.append({"local": local,"visitante": visitante,"fecha": fecha, "id": id_fixture})
@@ -271,7 +282,6 @@ def apostar(usuario):
 
     for i in range(len(fixtures_equipo)):
         if(pregunta_fecha == fixtures_equipo[i]['fecha']):
-            print(fixtures_equipo[i])   #############################################
             prediccion = respuesta_api(f"/predictions?fixture={fixtures_equipo[i]['id']}")
             if(prediccion['response'][0]['teams']['home']['name'] == prediccion['response'][0]['predictions']['winner']['name']):
                 prediccion = {"equipo": prediccion['response'][0]['predictions']['winner']['name'], "win or draw": prediccion['response'][0]['predictions']['win_or_draw'],"local o visitante": "L"}
@@ -296,24 +306,24 @@ def apostar(usuario):
             if(resultado == apuesta):
                 if((prediccion['local o visitante'] == apuesta and prediccion['win or draw'] == True) or (prediccion['local o visitante'] != apuesta and prediccion['win or draw'] == False)):
                     multiplicador = random.randrange(2,5)
-                    monto_final = monto * multiplicador + monto * 0.1
+                    monto_final   = monto * multiplicador + monto * 0.1
                 else:
                     multiplicador = random.randrange(2,5)
-                    monto_final = monto * multiplicador
+                    monto_final   = monto * multiplicador
             elif(resultado != apuesta and resultado == 'E'):
                 multiplicador = 0.5
-                monto = monto * multiplicador
+                monto_final   = monto * multiplicador
             else:
                 multiplicador = 0
-                monto_final = monto*multiplicador
+                monto_final   = monto*multiplicador
     
     print(f"Resultado: {resultado}, Monto actual: {monto_final}, Monto anterior: {monto}")
     print(f"Ganancia: {monto_final - monto}")
     ganancia = float(monto_final - monto)
     fecha_transaccion = datetime.datetime.today()
     bd_usuarios.remove(usuario)
-    usuario['dinero disponible'] = usuario['dinero disponible'] + ganancia
-    usuario['cantidad apostada'] = usuario['cantidad apostada'] + monto
+    usuario['dinero disponible']    = usuario['dinero disponible'] + ganancia
+    usuario['cantidad apostada']    = usuario['cantidad apostada'] + monto
     usuario['fecha ultima apuesta'] = fecha_transaccion
     bd_usuarios.append(usuario)
     actualizar_tabla_usuarios(bd_usuarios)
@@ -330,27 +340,30 @@ def main():
     while (usuario == None):
         usuario = ingreso_de_usuario()
     
-    imprimir_menu()
-
-    seleccionar_opcion = input("Seleccionar una opcion: ")
-    while (verificar_opciones(seleccionar_opcion) == False):
+    repreguntar = "s"
+    while(repreguntar == "s"):
+        imprimir_menu()
         seleccionar_opcion = input("Seleccionar una opcion: ")
-    if(seleccionar_opcion == 'a'):
-        mostrar_plantel()
-    if(seleccionar_opcion == 'b'):
-        mostrar_tabla_posiciones()
-    if(seleccionar_opcion == 'c'):
-        mostar_info_equipo()
-    if(seleccionar_opcion == 'd'):
-        mostrar_grafico()
-    if(seleccionar_opcion == 'e'):
-        ingresar_dinero(usuario)
-    if(seleccionar_opcion == 'f'):
-        mostrar_usuario_mas_dinero_aposto()
-    if(seleccionar_opcion == 'g'):
-        mostar_usuario_mas_veces_gano()
-    if(seleccionar_opcion == 'h'):
-        apostar(usuario)
-             
+        while (verificar_opciones(seleccionar_opcion) == False):
+            seleccionar_opcion = input("Seleccionar una opcion: ")
+        if(seleccionar_opcion == 'a'):
+            mostrar_plantel()
+        if(seleccionar_opcion == 'b'):
+            mostrar_tabla_posiciones()
+        if(seleccionar_opcion == 'c'):
+            mostar_info_equipo()
+        if(seleccionar_opcion == 'd'):
+            mostrar_grafico()
+        if(seleccionar_opcion == 'e'):
+            ingresar_dinero(usuario)
+        if(seleccionar_opcion == 'f'):
+            mostrar_usuario_mas_dinero_aposto()
+        if(seleccionar_opcion == 'g'):
+            mostar_usuario_mas_veces_gano()
+        if(seleccionar_opcion == 'h'):
+            apostar(usuario)
+        repreguntar = input("Volver?(s/n): ").lower()
+        while(repreguntar != "s" and repreguntar != "n"):
+            repreguntar = input("Volver?(s/n): ").lower()
 main()
 
