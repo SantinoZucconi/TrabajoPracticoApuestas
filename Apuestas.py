@@ -7,6 +7,7 @@ import random
 import colored
 from colored import stylize
 import datetime
+from datetime import date
 from PIL import Image
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -174,7 +175,6 @@ def mostar_info_equipo():
     api           = respuesta_api("standings?league=128&season=2023")
     liga          = api['response'][0]['league']['standings'][1]
     equipo_mas_id = []
-    jugadores     = []
     for i in range(len(liga)):
         equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
     
@@ -184,13 +184,14 @@ def mostar_info_equipo():
             equipo     = api_equipo['response'][0]['team']
             estadio    = api_equipo['response'][0]['venue']
    
-    print("Equipo: ")
-    for i in equipo.items():
-        print(i)
     print("")
-    print("Estadio: ")
+    print(f"{stylize('Equipo:', colored.fg('green'))}")
+    for i in equipo.items():
+        print(f"{i[0]}: {i[1]}")
+    print("")
+    print(f"{stylize('Estadio:', colored.fg('green'))}")
     for i in estadio.items():
-        print(i)
+        print(f"{i[0]}: {i[1]}")
 
     escudo         = Image.open(requests.get(equipo['logo'], stream=True).raw) 
     imagen_estadio = Image.open(requests.get(estadio['image'], stream=True).raw)
@@ -211,7 +212,6 @@ def mostrar_grafico():
     
     for i in range(len(equipo_mas_id)):
         if (preguntar in equipo_mas_id[i]["nombre"]):
-            print(equipo_mas_id[i])
             api_estadisticas = respuesta_api(f"/teams/statistics?season=2023&team={equipo_mas_id[i]['id']}&league=128")
             estadisticas = api_estadisticas['response']['goals']['for']['minute']
     
@@ -249,18 +249,18 @@ def ingresar_dinero(usuario):
 def mostrar_usuario_mas_dinero_aposto():
     usuarios      = leer_usuarios(archivo_usuarios = "usuarios.csv")
     max_apostador = [usuarios[0]]
-    for i in range(len(usuarios)):
+    for i in range(1,len(usuarios)):
         if (usuarios[i]['cantidad apostada'] > max_apostador[0]['cantidad apostada']):
             max_apostador = [usuarios[i]]
         elif (usuarios[i]['cantidad apostada'] == max_apostador[0]['cantidad apostada']):
             max_apostador.append(usuarios[i])
     
     if (len(max_apostador) == 1):
-        print(f"El usuario que más dinero apostó fue {max_apostador[0]['nombre']}")
+        print(f"El usuario que más dinero apostó fue {max_apostador[0]['nombre']} con un total de {max_apostador[0]['cantidad apostada']}$")
     else:
         print(f"Los usuarios que más dinero apostaron fueron:")
         for i in range(len(max_apostador)):
-            print(max_apostador[i]['nombre'])
+            print(f"{max_apostador[i]['nombre']}, {max_apostador[i]['cantidad apostada']}$")
 
     return
 
@@ -287,8 +287,10 @@ def mostar_usuario_mas_veces_gano():
     for i in range(len(usuarios)):
         if(usuarios[i]['id'] == max_ganador):
             max_ganador = usuarios[i]['nombre']
-    print(f"El usuario que mas veces gano fue: {max_ganador} con un total de {max_ganancia} veces ganadas.")
-        
+    if(max_ganador != "" and max_ganancia != 0):
+        print(f"El usuario que mas veces gano fue: {max_ganador} con un total de {max_ganancia} veces ganadas.")
+    else:
+        print("Ningun jugador ha ganado hasta el momento")    
     return
 
 def apostar(usuario):
@@ -296,6 +298,7 @@ def apostar(usuario):
     fixtures        = respuesta_api("/fixtures?league=128&season=2023")['response']
     fixtures_equipo = []
     pregunta        = input("Ingrese un equipo: ").capitalize()
+    fechas_en_lista = []
     
     for i in range(len(fixtures)):
         local      = fixtures[i]['teams']['home']['name']
@@ -305,7 +308,11 @@ def apostar(usuario):
         if(pregunta in local or pregunta in visitante):
             print(f"{local}(L) vs. {visitante}(V) - fecha: {fecha}")
             fixtures_equipo.append({"local": local,"visitante": visitante,"fecha": fecha, "id": id_fixture})
+            fechas_en_lista.append(fecha)
     pregunta_fecha = input("Ingrese la fecha deseada (YYYY/MM/DD): ")
+    while(pregunta_fecha not in fechas_en_lista):
+        print("Fecha no disponible")
+        pregunta_fecha = input("Ingrese la fecha deseada (YYYY/MM/DD): ")
 
     for i in range(len(fixtures_equipo)):
         if(pregunta_fecha == fixtures_equipo[i]['fecha']):
@@ -314,7 +321,6 @@ def apostar(usuario):
                 prediccion = {"equipo": prediccion['response'][0]['predictions']['winner']['name'], "win or draw": prediccion['response'][0]['predictions']['win_or_draw'],"local o visitante": "L"}
             else:
                 prediccion = {"equipo": prediccion['response'][0]['predictions']['winner']['name'], "win or draw": prediccion['response'][0]['predictions']['win_or_draw'],"local o visitante": "V"}
-            print(prediccion)
             apuesta = input("Ingrese su apuesta (L/E/V): ").upper()
             while (apuesta not in ["L","E","V"]):
                 apuesta = input("Opción no disponible, porfavor ingrese su apuesta (L/E/V): ").upper()
@@ -347,7 +353,8 @@ def apostar(usuario):
     print(f"Resultado: {resultado}, Monto actual: {monto_final}, Monto anterior: {monto}")
     print(f"Ganancia: {monto_final - monto}")
     ganancia = float(monto_final - monto)
-    fecha_transaccion = datetime.datetime.today()
+    fecha_transaccion = date.today()
+    fecha_transaccion = '{}/{}/{}'.format(fecha_transaccion.day, fecha_transaccion.month, fecha_transaccion.year)
     bd_usuarios.remove(usuario)
     usuario['dinero disponible']    = usuario['dinero disponible'] + ganancia
     usuario['cantidad apostada']    = usuario['cantidad apostada'] + monto
