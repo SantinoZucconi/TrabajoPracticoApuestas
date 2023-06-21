@@ -59,8 +59,11 @@ def ingreso_de_usuario() -> dict:
     mail = input("Ingrese su mail: ")
     if (validar_mail(mail) == False):
         print("Mail invalido")
-        ingreso_de_usuario()
-        return  
+        usuario_coincidente = ingreso_de_usuario()
+        if(usuario_coincidente != None):
+            return usuario_coincidente
+        else:
+            return  
     nombre_de_usuario   = input("Ingrese su nombre de usuario: ")
     contraseña          = input("Ingrese su contraseña: ")
     usuarios            = leer_usuarios(archivo_usuarios = "usuarios.csv")
@@ -109,25 +112,26 @@ def verificar_opciones(input) -> bool:
         return True
 
 def mostrar_plantel():
-    preguntar     = input("Ingrese el nombre del equipo: ").lower()
     api           = respuesta_api("standings?league=128&season=2023")
     liga          = api['response'][0]['league']['standings'][1]
     equipo_mas_id = []
     jugadores     = []
+
     for i in range(len(liga)):
         equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
+        
+    while(jugadores == []):
+        preguntar = input("Ingrese el nombre del equipo: ").lower()
+        for i in range(len(equipo_mas_id)):
+            if (preguntar in equipo_mas_id[i]["nombre"]):
+                api_equipo = respuesta_api(f"/players/squads?team={equipo_mas_id[i]['id']}")
+                jugadores  = api_equipo['response'][0]['players']
+        if(jugadores == []):
+            print("Equipo no disponible")
     
-    for i in range(len(equipo_mas_id)):
-        if (preguntar in equipo_mas_id[i]["nombre"]):
-            api_equipo = respuesta_api(f"/players/squads?team={equipo_mas_id[i]['id']}")
-            jugadores  = api_equipo['response'][0]['players']
-    
-    if(jugadores != []):
-        for i in range(len(jugadores)):
-            print(f"{i+1}. {jugadores[i]['name']}")
-    else:
-        print("Nombre de equipo inválido")
-        mostrar_plantel()
+
+    for i in range(len(jugadores)):
+        print(f"{i+1}. {jugadores[i]['name']}")
     return
 
 def mostrar_tabla_posiciones():
@@ -171,18 +175,24 @@ def mostrar_tabla_posiciones():
     return
 
 def mostar_info_equipo():
-    preguntar     = input("Ingrese el nombre del equipo: ").lower()
     api           = respuesta_api("standings?league=128&season=2023")
     liga          = api['response'][0]['league']['standings'][1]
     equipo_mas_id = []
+    equipo        = ""
+    estadio       = ""
+
     for i in range(len(liga)):
         equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
     
-    for i in range(len(equipo_mas_id)):
-        if (preguntar in equipo_mas_id[i]["nombre"]):
-            api_equipo = respuesta_api(f"/teams?id={equipo_mas_id[i]['id']}")
-            equipo     = api_equipo['response'][0]['team']
-            estadio    = api_equipo['response'][0]['venue']
+    while(equipo == "" and estadio == ""):
+        preguntar = input("Ingrese el nombre del equipo: ").lower()
+        for i in range(len(equipo_mas_id)):
+            if (preguntar in equipo_mas_id[i]["nombre"]):
+                api_equipo = respuesta_api(f"/teams?id={equipo_mas_id[i]['id']}")
+                equipo     = api_equipo['response'][0]['team']
+                estadio    = api_equipo['response'][0]['venue']
+        if(equipo == "" and estadio == ""):
+            print("Equipo no disponible")
    
     print("")
     print(f"{stylize('Equipo:', colored.fg('green'))}")
@@ -200,20 +210,25 @@ def mostar_info_equipo():
     return
 
 def mostrar_grafico():
-    preguntar     = input("Ingrese el nombre del equipo: ").lower()
     api           = respuesta_api("standings?league=128&season=2023")
     liga          = api['response'][0]['league']['standings'][1]
     equipo_mas_id = []
     x             = []
     y             = []
+    estadisticas  = ""
     
     for i in range(len(liga)):
         equipo_mas_id.append({"nombre": api['response'][0]['league']['standings'][1][i]['team']['name'].lower(), "id": api['response'][0]['league']['standings'][1][i]['team']['id']})
     
-    for i in range(len(equipo_mas_id)):
-        if (preguntar in equipo_mas_id[i]["nombre"]):
-            api_estadisticas = respuesta_api(f"/teams/statistics?season=2023&team={equipo_mas_id[i]['id']}&league=128")
-            estadisticas = api_estadisticas['response']['goals']['for']['minute']
+    while(estadisticas == ""):
+        preguntar = input("Ingrese el nombre del equipo: ").lower()
+        for i in range(len(equipo_mas_id)):
+            if (preguntar in equipo_mas_id[i]["nombre"]):
+                api_estadisticas = respuesta_api(f"/teams/statistics?season=2023&team={equipo_mas_id[i]['id']}&league=128")
+                estadisticas = api_estadisticas['response']['goals']['for']['minute']
+        if(estadisticas == ""):
+            print("Equipo no disponible")
+    
     
     for minutos, goles in estadisticas.items():
         x.append(minutos)
@@ -297,18 +312,22 @@ def apostar(usuario):
     bd_usuarios     = leer_usuarios(archivo_usuarios = "usuarios.csv")
     fixtures        = respuesta_api("/fixtures?league=128&season=2023")['response']
     fixtures_equipo = []
-    pregunta        = input("Ingrese un equipo: ").capitalize()
     fechas_en_lista = []
     
-    for i in range(len(fixtures)):
-        local      = fixtures[i]['teams']['home']['name']
-        visitante  = fixtures[i]['teams']['away']['name']
-        id_fixture = fixtures[i]['fixture']['id']
-        fecha      = fixtures[i]['fixture']['date'].split("T")[0].replace("-","/")
-        if(pregunta in local or pregunta in visitante):
-            print(f"{local}(L) vs. {visitante}(V) - fecha: {fecha}")
-            fixtures_equipo.append({"local": local,"visitante": visitante,"fecha": fecha, "id": id_fixture})
-            fechas_en_lista.append(fecha)
+    while(fixtures_equipo == []):
+        pregunta = input("Ingrese un equipo: ").capitalize()
+        for i in range(len(fixtures)):
+            local      = fixtures[i]['teams']['home']['name']
+            visitante  = fixtures[i]['teams']['away']['name']
+            id_fixture = fixtures[i]['fixture']['id']
+            fecha      = fixtures[i]['fixture']['date'].split("T")[0].replace("-","/")
+            if(pregunta in local or pregunta in visitante):
+                print(f"{local}(L) vs. {visitante}(V) - fecha: {fecha}")
+                fixtures_equipo.append({"local": local,"visitante": visitante,"fecha": fecha, "id": id_fixture})
+                fechas_en_lista.append(fecha)
+        if(fixtures_equipo == []):
+            print("Equipo no disponible")
+
     pregunta_fecha = input("Ingrese la fecha deseada (YYYY/MM/DD): ")
     while(pregunta_fecha not in fechas_en_lista):
         print("Fecha no disponible")
