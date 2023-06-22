@@ -57,13 +57,9 @@ def actualizar_tabla_usuarios(datos_actualizados):
 def ingreso_de_usuario() -> dict:
 
     mail = input("Ingrese su mail: ")
-    if (validar_mail(mail) == False):
+    while(validar_mail(mail) == False):
         print("Mail invalido")
-        usuario_coincidente = ingreso_de_usuario()
-        if(usuario_coincidente != None):
-            return usuario_coincidente
-        else:
-            return  
+        mail = input("Ingrese su mail: ")
     nombre_de_usuario   = input("Ingrese su nombre de usuario: ")
     contraseña          = input("Ingrese su contraseña: ")
     usuarios            = leer_usuarios(archivo_usuarios = "usuarios.csv")
@@ -269,13 +265,21 @@ def mostrar_usuario_mas_dinero_aposto():
             max_apostador = [usuarios[i]]
         elif (usuarios[i]['cantidad apostada'] == max_apostador[0]['cantidad apostada']):
             max_apostador.append(usuarios[i])
+            
     
     if (len(max_apostador) == 1):
-        print(f"El usuario que más dinero apostó fue {max_apostador[0]['nombre']} con un total de {max_apostador[0]['cantidad apostada']}$")
+        if(max_apostador[0]['cantidad apostada'] != 0):
+            print(f"El usuario que más dinero apostó fue {max_apostador[0]['nombre']} con un total de {max_apostador[0]['cantidad apostada']}$")
+        else:
+            print("Ningun usuario ha apostado")
     else:
-        print(f"Los usuarios que más dinero apostaron fueron:")
-        for i in range(len(max_apostador)):
-            print(f"{max_apostador[i]['nombre']}, {max_apostador[i]['cantidad apostada']}$")
+        if(max_apostador[0]['cantidad apostada'] != 0):
+            print(f"Los usuarios que más dinero apostaron fueron:")
+            for i in range(len(max_apostador)):
+                print(f"{max_apostador[i]['nombre']}, {max_apostador[i]['cantidad apostada']}$")
+        else:
+            print("Ningun usuario ha apostado")
+            
 
     return
 
